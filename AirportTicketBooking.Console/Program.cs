@@ -1,7 +1,7 @@
 ﻿using AirportTicketBooking.Data;
 using AirportTicketBooking.Domain.Entities;
 
-string filePath = "passengers.json";
+string filePath = @"..\AirportTicketBooking.Data\Passengers.json";
 var repo = new JsonRepository<Passenger>(filePath);
 
 Console.WriteLine("--- 1. فحص دالة الإضافة (Add) ---");
