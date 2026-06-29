@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="AirportTicketBooking.Domain/AirportTicketBooking.Domain.csproj" />
+  <Project Path="AirportTicketBooking.Data/AirportTicketBooking.Data.csproj" />
   <Project Path="AirportTicketBooking.Console/AirportTicketBooking.Console.csproj" />
 </Solution>

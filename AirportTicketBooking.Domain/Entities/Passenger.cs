@@ -2,6 +2,7 @@ using AirportTicketBooking.Domain.Common;
 
 namespace AirportTicketBooking.Domain.Entities;
 
-public class Manager : User
+public class Passenger : User
 {
+    public string PassportNumber { get; init; }
 }

@@ -1,4 +1,8 @@
-    public interface IRepository<T> where T : EntityBase
+using AirportTicketBooking.Domain.Common;
+
+namespace AirportTicketBooking.Domain.Interfaces;
+
+public interface IRepository<T> where T : EntityBase
 {
     IEnumerable<T> GetAll();
     T? GetById(Guid id);
