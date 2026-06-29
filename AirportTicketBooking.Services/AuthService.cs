@@ -29,7 +29,7 @@ public class AuthService
 
     public Passenger? RegisterPassenger(string name, string email,string password, string passportNumber)
     {
-        if(_passengerRepository.GetAll().Any(p => p.Email == email))
+        if(_passengerRepository.GetAll().Any(p => p.Email == email)|| _managerRepository.GetAll().Any(m => m.Email == email))
         {
             throw new Exception("Email already exists.");
         }
