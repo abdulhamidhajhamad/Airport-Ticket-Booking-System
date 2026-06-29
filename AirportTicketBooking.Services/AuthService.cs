@@ -26,4 +26,26 @@ public class AuthService
         }
         return null;
     }
+
+    public Passenger? RegisterPassenger(string name, string email,string password, string passportNumber)
+    {
+        if(_passengerRepository.GetAll().Any(p => p.Email == email))
+        {
+            throw new Exception("Email already exists.");
+        }
+        else
+        {
+            var hashedPassword = PasswordHasher.HashPassword(password);
+            var newPassenger = new Passenger
+            {
+                Name = name,
+                Email = email,
+                Password = hashedPassword,
+                PassportNumber = passportNumber
+            };
+            _passengerRepository.Add(newPassenger);
+            _passengerRepository.Save();
+            return newPassenger;
+        }
+    }
 }
