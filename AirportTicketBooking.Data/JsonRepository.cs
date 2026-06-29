@@ -46,10 +46,8 @@ public class JsonRepository<T> : IRepository<T> where T : EntityBase
 
     public void Update(T entity)
     {
-        var existing = GetById(entity.Id);
-        if (existing != null)
+        if (_cache.RemoveAll(e => e.Id == entity.Id) > 0)
         {
-            _cache.Remove(existing);
             _cache.Add(entity);
             _isDirty = true;
         }
@@ -57,10 +55,8 @@ public class JsonRepository<T> : IRepository<T> where T : EntityBase
 
     public void Delete(Guid id)
     {
-        var existing = GetById(id);
-        if (existing != null)
+        if (_cache.RemoveAll(e => e.Id == id) > 0)
         {
-            _cache.Remove(existing);
             _isDirty = true;
         }
     }
