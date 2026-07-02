@@ -1,12 +1,23 @@
-namespace AirportTicketBooking.Domain.ManagerServices;
+using AirportTicketBooking.Domain.Entities;
+using AirportTicketBooking.Domain.Enums;
+using AirportTicketBooking.Domain.Interfaces; 
+using AirportTicketBooking.Services.Utilities;
+
+namespace AirportTicketBooking.Services;
 
 public class ManagerService
 {
     private readonly IRepository<Booking> _bookingRepository;
-private readonly FlightService _flightService;
-    public ManagerService(IRepository<Booking> bookingRepository, FlightService flightService)
+    private readonly IRepository<Flight> _flightRepository; 
+    private readonly FlightService _flightService;
+
+    public ManagerService(
+        IRepository<Booking> bookingRepository, 
+        IRepository<Flight> flightRepository, 
+        FlightService flightService)
     {
         _bookingRepository = bookingRepository;
+        _flightRepository = flightRepository;
         _flightService = flightService;
     }
 
@@ -22,13 +33,15 @@ private readonly FlightService _flightService;
         decimal? maxPrice = null
     )
     {
-        if(maxPrice<0)
+        if (maxPrice < 0)
         {
             throw new ArgumentException("Max price cannot be negative.");
         }
+
         var matchingFlights = _flightService.Search(DepartureAirport, ArrivalAirport, DepartureDate, null, null, DepartureCountry, ArrivalCountry);
         var matchingFlightIds = matchingFlights.Select(f => f.Id).ToHashSet();
         var bookings = _bookingRepository.GetAll().Where(b => matchingFlightIds.Contains(b.FlightId));
+
         if (flightClass.HasValue)
         {
             bookings = bookings.Where(b => b.FlightClass == flightClass.Value);
@@ -37,7 +50,7 @@ private readonly FlightService _flightService;
         {
             bookings = bookings.Where(b => b.FlightId == flightId.Value);
         }
-        if(maxPrice.HasValue)
+        if (maxPrice.HasValue)
         {
             bookings = bookings.Where(b => b.Price <= maxPrice.Value);
         }
@@ -45,56 +58,8 @@ private readonly FlightService _flightService;
         {
             bookings = bookings.Where(b => b.PassportNumber.Equals(passengerPassportNumber, StringComparison.OrdinalIgnoreCase));
         }
+
         return bookings;
-    }
-
-        private bool TryParseFlight(string [] columns,out Flight? flight)
-    {
-       flight=null;
-       
-       if (columns.Length < 10)
-       {
-            return false;
-       }
-
-       if (!DateTime.TryParse(columns[5], out DateTime departureDateTime) || !DateTime.TryParse(columns[6], out DateTime arrivalDateTime))
-       {
-            return false;
-       }
-       if (!decimal.TryParse(columns[7], out decimal economyPrice) || !decimal.TryParse(columns[8], out decimal businessPrice) || !decimal.TryParse(columns[9], out decimal firstClassPrice))
-       {
-            return false;
-       }
-       if (economyPrice < 0 || businessPrice < 0 || firstClassPrice < 0)
-       {
-            return false;
-       }
-       if (departureDateTime >= arrivalDateTime)
-       {
-            return false;
-       }
-       if (string.IsNullOrWhiteSpace(columns[0]) || string.IsNullOrWhiteSpace(columns[1]) || string.IsNullOrWhiteSpace(columns[2]) || string.IsNullOrWhiteSpace(columns[3]) || string.IsNullOrWhiteSpace(columns[4]))
-       {
-            return false;
-       } 
-              flight = new Flight
-       {
-            Id = Guid.NewGuid(),
-            FlightNumber = columns[0],
-            DepartureAirport = columns[1],
-            ArrivalAirport = columns[2],
-            DepartureCountry = columns[3],
-            ArrivalCountry = columns[4],
-                   DepartureDateTime =departureDateTime,
-                ArrivalDateTime = arrivalDateTime,
-                Prices = new Dictionary<FlightClass, decimal>
-                {
-                    { FlightClass.Economy, economyPrice },
-                    { FlightClass.Business, businessPrice },
-                    { FlightClass.FirstClass, firstClassPrice }
-                }
-       };
-       return true;
     }
 
     public void ImportFlightsFromCsv(string filePath)
@@ -105,16 +70,40 @@ private readonly FlightService _flightService;
         }
 
         var lines = File.ReadLines(filePath);
-        foreach (var line in lines.Skip(1))
+        
+        foreach (var line in lines.Skip(1)) 
         {
+            if (string.IsNullOrWhiteSpace(line)) continue;
+
             var columns = line.Split(',');
-            if (!TryParseFlight(columns, out Flight? flight))
+
+            if (columns.Length < 10) continue;
+
+            try
             {
-                continue;
+                Flight flight = CsvReflectionParser.ParseRow(columns);
+
+                if (flight.DepartureDateTime >= flight.ArrivalDateTime) continue;
+                
+                if (flight.Prices.Values.Any(p => p < 0)) continue;
+
+                if (string.IsNullOrWhiteSpace(flight.FlightNumber) || 
+                    string.IsNullOrWhiteSpace(flight.DepartureAirport) || 
+                    string.IsNullOrWhiteSpace(flight.ArrivalAirport))
+                {
+                    continue;
+                }
+
+                flight.Id = Guid.NewGuid();
+
+                _flightRepository.Add(flight);
             }
-            _flightRepository.Add(flight);
+            catch
+            {
+                continue; 
+            }
         }
+
         _flightRepository.Save();
     }
-
 }

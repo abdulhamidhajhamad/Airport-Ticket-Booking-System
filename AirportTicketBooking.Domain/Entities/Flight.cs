@@ -5,12 +5,29 @@ namespace AirportTicketBooking.Domain.Entities;
 
 public class Flight : EntityBase
 {
-    public string FlightNumber { get; init; }
-    public string DepartureAirport { get; init; }
-    public string ArrivalAirport { get; init; }
+    [CsvColumn(0)]
+    public required string FlightNumber { get; init; }=string.Empty;
+
+    [CsvColumn(1)]
+    public string DepartureAirport { get; init; }=string.Empty;
+
+    [CsvColumn(2)]
+    public string ArrivalAirport { get; init; }=string.Empty;
+
+    [CsvColumn(5)]
     public DateTime DepartureDateTime { get; init; }
+
+    [CsvColumn(6)] 
     public int MaxPassengers { get; init; }
-    public string DepartureCountry { get; init; }
-    public string ArrivalCountry { get; init; }
-    public Dictionary<FlightClass, decimal> Prices { get; init; }
+
+    [CsvColumn(3)]
+    public string DepartureCountry { get; init; }=string.Empty;
+
+    [CsvColumn(4)]
+    public string ArrivalCountry { get; init; }=string.Empty;
+
+    [CsvPriceMapping(FlightClass.Economy, 7)]
+    [CsvPriceMapping(FlightClass.Business, 8)]
+    [CsvPriceMapping(FlightClass.FirstClass, 9)]
+    public required Dictionary<FlightClass, decimal> Prices { get; init; }
 }
