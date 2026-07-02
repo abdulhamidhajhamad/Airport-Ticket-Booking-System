@@ -53,7 +53,7 @@ public class ManagerService
         
         if (!string.IsNullOrEmpty(passengerPassportNumber))
         {
-            bookings = bookings.Where(b => b.PassportNumber.Equals(passengerPassportNumber, StringComparison.OrdinalIgnoreCase));
+            bookings = bookings.Where(b => b.PassengerPassportNumber.Equals(passengerPassportNumber, StringComparison.OrdinalIgnoreCase));
         }
 
         return bookings;

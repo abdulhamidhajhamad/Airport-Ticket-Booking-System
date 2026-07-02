@@ -1,3 +1,5 @@
+namespace AirportTicketBooking.Services.Utilities;
+
 public class PasswordHasher
 {
     public static string HashPassword(string password)

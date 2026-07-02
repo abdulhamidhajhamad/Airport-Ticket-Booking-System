@@ -1,0 +1,50 @@
+[
+  {
+    "FlightNumber": "TK1822",
+    "DepartureAirport": "test",
+    "ArrivalAirport": "test",
+    "DepartureDateTime": "2026-08-15T10:00:00",
+    "MaxPassengers": 0,
+    "ArrivalDateTime": "2026-08-15T12:00:00",
+    "DepartureCountry": "Turkey",
+    "ArrivalCountry": "Palestine",
+    "Prices": {
+      "Economy": 150.0,
+      "Business": 350.0,
+      "FirstClass": 600.0
+    },
+    "Id": "99999999-8888-7777-6666-555555555555"
+  },
+  {
+    "FlightNumber": "QA120",
+    "DepartureAirport": "DOH",
+    "ArrivalAirport": "IST",
+    "DepartureDateTime": "2026-09-01T08:00:00",
+    "MaxPassengers": 0,
+    "ArrivalDateTime": "2026-09-01T12:00:00",
+    "DepartureCountry": "Qatar",
+    "ArrivalCountry": "Turkey",
+    "Prices": {
+      "Economy": 200,
+      "Business": 450,
+      "FirstClass": 800
+    },
+    "Id": "70941c32-8967-4b1c-8a1e-41d0622cdfc3"
+  },
+  {
+    "FlightNumber": "QA120",
+    "DepartureAirport": "DOH",
+    "ArrivalAirport": "IST",
+    "DepartureDateTime": "2026-09-01T08:00:00",
+    "MaxPassengers": 0,
+    "ArrivalDateTime": "2026-09-01T12:00:00",
+    "DepartureCountry": "Qatar",
+    "ArrivalCountry": "Turkey",
+    "Prices": {
+      "Economy": 200,
+      "Business": 450,
+      "FirstClass": 800
+    },
+    "Id": "fe4318bf-be5d-43e7-aedb-f173f81e5e08"
+  }
+]

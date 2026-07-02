@@ -2,8 +2,8 @@
   {
     "PassportNumber": "A1234567",
     "Name": "Ahmad Al-Ali",
-    "Email": null,
-    "Password": null,
+    "Email": "ahmad@gmail.com",
+    "Password": "123456789",
     "Id": "b8b45584-4ac2-4330-b1bd-6c6dd791d1d7"
   }
 ]

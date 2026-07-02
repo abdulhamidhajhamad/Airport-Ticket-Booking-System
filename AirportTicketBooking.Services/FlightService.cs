@@ -1,3 +1,7 @@
+using AirportTicketBooking.Domain.Entities;
+using AirportTicketBooking.Domain.Enums;
+using AirportTicketBooking.Domain.Interfaces;
+
 namespace AirportTicketBooking.Services;
 public class FlightService
 {
