@@ -47,4 +47,74 @@ private readonly FlightService _flightService;
         }
         return bookings;
     }
+
+        private bool TryParseFlight(string [] columns,out Flight? flight)
+    {
+       flight=null;
+       
+       if (columns.Length < 10)
+       {
+            return false;
+       }
+
+       if (!DateTime.TryParse(columns[5], out DateTime departureDateTime) || !DateTime.TryParse(columns[6], out DateTime arrivalDateTime))
+       {
+            return false;
+       }
+       if (!decimal.TryParse(columns[7], out decimal economyPrice) || !decimal.TryParse(columns[8], out decimal businessPrice) || !decimal.TryParse(columns[9], out decimal firstClassPrice))
+       {
+            return false;
+       }
+       if (economyPrice < 0 || businessPrice < 0 || firstClassPrice < 0)
+       {
+            return false;
+       }
+       if (departureDateTime >= arrivalDateTime)
+       {
+            return false;
+       }
+       if (string.IsNullOrWhiteSpace(columns[0]) || string.IsNullOrWhiteSpace(columns[1]) || string.IsNullOrWhiteSpace(columns[2]) || string.IsNullOrWhiteSpace(columns[3]) || string.IsNullOrWhiteSpace(columns[4]))
+       {
+            return false;
+       } 
+              flight = new Flight
+       {
+            Id = Guid.NewGuid(),
+            FlightNumber = columns[0],
+            DepartureAirport = columns[1],
+            ArrivalAirport = columns[2],
+            DepartureCountry = columns[3],
+            ArrivalCountry = columns[4],
+                   DepartureDateTime =departureDateTime,
+                ArrivalDateTime = arrivalDateTime,
+                Prices = new Dictionary<FlightClass, decimal>
+                {
+                    { FlightClass.Economy, economyPrice },
+                    { FlightClass.Business, businessPrice },
+                    { FlightClass.FirstClass, firstClassPrice }
+                }
+       };
+       return true;
+    }
+
+    public void ImportFlightsFromCsv(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"The file {filePath} does not exist.");
+        }
+
+        var lines = File.ReadLines(filePath);
+        foreach (var line in lines.Skip(1))
+        {
+            var columns = line.Split(',');
+            if (!TryParseFlight(columns, out Flight? flight))
+            {
+                continue;
+            }
+            _flightRepository.Add(flight);
+        }
+        _flightRepository.Save();
+    }
+
 }
