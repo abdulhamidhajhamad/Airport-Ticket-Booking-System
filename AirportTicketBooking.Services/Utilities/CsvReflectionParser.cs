@@ -74,7 +74,7 @@ public static class CsvReflectionParser
         }
 
         return flight;
-    }
+    }   
 
     private static object ConvertChangeType(string value, Type targetType)
     {

@@ -139,39 +139,51 @@ public class ManagerService
     }
 
     public void DisplayFlightValidationConstraints()
+{
+    var flightType = typeof(Flight);
+    var properties = flightType.GetProperties();
+
+    Console.WriteLine("\n=== Dynamic Model Validation Details ===");
+
+    foreach (var prop in properties)
     {
-        var flightType = typeof(Flight);
-        var properties = flightType.GetProperties();
+        var hasColumn = prop.GetCustomAttribute<CsvColumnAttribute>() != null;
+        var hasPrice = prop.GetCustomAttributes<CsvPriceMappingAttribute>().Any();
 
-        Console.WriteLine("\n=== Dynamic Model Validation Details ===");
+        if (!hasColumn && !hasPrice) continue;
 
-        foreach (var prop in properties)
+        Console.WriteLine($"\n* {prop.Name} *");
+
+        if (prop.PropertyType == typeof(string)) Console.WriteLine("   Type: Free Text");
+        else if (prop.PropertyType == typeof(DateTime)) Console.WriteLine("   Type: Date Time");
+        else if (prop.PropertyType == typeof(int)) Console.WriteLine("   Type: Integer");
+        else if (hasPrice) Console.WriteLine("   Type: Dictionary (FlightClass -> Decimal)");
+
+        var constraints = new List<string>();
+
+        bool isRequiredByCode = prop.CustomAttributes.Any(a => a.AttributeType.Name == "RequiredMemberAttribute");
+        
+        if (isRequiredByCode)
         {
-            var hasColumn = prop.GetCustomAttribute<CsvColumnAttribute>() != null;
-            var hasPrice = prop.GetCustomAttributes<CsvPriceMappingAttribute>().Any();
-
-            if (!hasColumn && !hasPrice) continue;
-
-            Console.WriteLine($"\n* {prop.Name} *");
-
-            if (prop.PropertyType == typeof(string)) Console.WriteLine("   Type: Free Text");
-            else if (prop.PropertyType == typeof(DateTime)) Console.WriteLine("   Type: Date Time");
-            else if (prop.PropertyType == typeof(int)) Console.WriteLine("   Type: Integer");
-            else if (hasPrice) Console.WriteLine("   Type: Dictionary (FlightClass -> Decimal)");
-
-            var constraints = new List<string> { "Required" };
-
-            if (prop.PropertyType == typeof(DateTime) || prop.GetCustomAttribute<FutureDateAttribute>() != null)
-            {
-                constraints.Add("Allowed Range (Today -> Future)");
-            }
-            if (prop.PropertyType == typeof(int) || hasPrice)
-            {
-                constraints.Add("Must be non-negative (>= 0)");
-            }
-
-            Console.WriteLine($"   Constraint: {string.Join(", ", constraints)}");
+            constraints.Add("Required");
         }
-        Console.WriteLine("\n=========================================");
+        else
+        {
+            constraints.Add("Optional"); 
+        }
+
+        if (prop.GetCustomAttribute<FutureDateAttribute>() != null)
+        {
+            constraints.Add("Allowed Range (Today -> Future)");
+        }
+
+        if (prop.PropertyType == typeof(int) || hasPrice)
+        {
+            constraints.Add("Must be non-negative (>= 0)");
+        }
+
+        Console.WriteLine($"   Constraint: {string.Join(", ", constraints)}");
     }
+    Console.WriteLine("\n=========================================");
+}
 }
