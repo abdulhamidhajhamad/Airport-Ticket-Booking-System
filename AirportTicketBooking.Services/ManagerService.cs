@@ -4,6 +4,7 @@ using AirportTicketBooking.Domain.Interfaces;
 using AirportTicketBooking.Domain.Common;
 using AirportTicketBooking.Services.Utilities;
 using System.Reflection;
+using AirportTicketBooking.Services.Enums;
 
 namespace AirportTicketBooking.Services;
 
@@ -103,6 +104,11 @@ public class ManagerService
                 {
                     rowValidationErrors.Add("تاريخ المغادرة قديم! يجب أن يكون تاريخ الرحلة في المستقبل.");
                 }
+                if (flight.ArrivalDateTime < DateTime.Now)
+                {
+                    rowValidationErrors.Add("تاريخ الوصول قديم! يجب أن يكون تاريخ الوصول في المستقبل.");
+                }
+                
 
                 if (flight.Prices.Values.Any(p => p < 0))
                 {
@@ -139,51 +145,36 @@ public class ManagerService
     }
 
     public void DisplayFlightValidationConstraints()
-{
-    var flightType = typeof(Flight);
-    var properties = flightType.GetProperties();
-
-    Console.WriteLine("\n=== Dynamic Model Validation Details ===");
-
-    foreach (var prop in properties)
     {
-        var hasColumn = prop.GetCustomAttribute<CsvColumnAttribute>() != null;
-        var hasPrice = prop.GetCustomAttributes<CsvPriceMappingAttribute>().Any();
+        var validationInfoList = CsvReflectionParser.GetValidationInfo();
 
-        if (!hasColumn && !hasPrice) continue;
+        Console.WriteLine("\n=== Dynamic Model Validation Details ===");
 
-        Console.WriteLine($"\n* {prop.Name} *");
-
-        if (prop.PropertyType == typeof(string)) Console.WriteLine("   Type: Free Text");
-        else if (prop.PropertyType == typeof(DateTime)) Console.WriteLine("   Type: Date Time");
-        else if (prop.PropertyType == typeof(int)) Console.WriteLine("   Type: Integer");
-        else if (hasPrice) Console.WriteLine("   Type: Dictionary (FlightClass -> Decimal)");
-
-        var constraints = new List<string>();
-
-        bool isRequiredByCode = prop.CustomAttributes.Any(a => a.AttributeType.Name == "RequiredMemberAttribute");
-        
-        if (isRequiredByCode)
+        foreach (var info in validationInfoList)
         {
-            constraints.Add("Required");
-        }
-        else
-        {
-            constraints.Add("Optional"); 
-        }
+            Console.WriteLine($"\n* {info.Property.Name} *");
 
-        if (prop.GetCustomAttribute<FutureDateAttribute>() != null)
-        {
-            constraints.Add("Allowed Range (Today -> Future)");
-        }
+            string typeLabel = info.FieldType switch
+            {
+                DisplayFieldType.FreeText => "Free Text",
+                DisplayFieldType.DateTime => "Date Time",
+                DisplayFieldType.Integer => "Integer",
+                DisplayFieldType.PriceDictionary => "Dictionary (FlightClass -> Decimal)",
+                _ => "Unknown"
+            };
+            Console.WriteLine($"   Type: {typeLabel}");
 
-        if (prop.PropertyType == typeof(int) || hasPrice)
-        {
-            constraints.Add("Must be non-negative (>= 0)");
-        }
+            var constraints = new List<string>();
+            constraints.Add(info.IsRequired ? "Required" : "Optional");
 
-        Console.WriteLine($"   Constraint: {string.Join(", ", constraints)}");
+            if (info.HasFutureDateConstraint)
+                constraints.Add("Allowed Range (Today -> Future)");
+
+            if (info.IsNonNegative)
+                constraints.Add("Must be non-negative (>= 0)");
+
+            Console.WriteLine($"   Constraint: {string.Join(", ", constraints)}");
+        }
+        Console.WriteLine("\n=========================================");
     }
-    Console.WriteLine("\n=========================================");
-}
 }
