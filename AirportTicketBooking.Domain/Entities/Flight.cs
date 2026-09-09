@@ -9,17 +9,20 @@ public class Flight : EntityBase
     public required string FlightNumber { get; init; }=string.Empty;
 
     [CsvColumn(1)]
-    public string DepartureAirport { get; init; }=string.Empty;
+    public required string DepartureAirport { get; init; }=string.Empty;
 
     [CsvColumn(2)]
     public string ArrivalAirport { get; init; }=string.Empty;
 
     [CsvColumn(5)]
+    [FutureDate]
     public DateTime DepartureDateTime { get; init; }
 
     public int MaxPassengers { get; init; }
 
     [CsvColumn(6)]
+    [FutureDate]
+
     public DateTime ArrivalDateTime { get; init; }
 
     [CsvColumn(3)]
