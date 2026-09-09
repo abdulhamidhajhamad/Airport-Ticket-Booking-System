@@ -46,5 +46,21 @@
       "FirstClass": 800
     },
     "Id": "fe4318bf-be5d-43e7-aedb-f173f81e5e08"
+  },
+  {
+    "FlightNumber": "QA120",
+    "DepartureAirport": "DOH",
+    "ArrivalAirport": "IST",
+    "DepartureDateTime": "2026-09-01T08:00:00",
+    "MaxPassengers": 0,
+    "ArrivalDateTime": "2026-09-01T12:00:00",
+    "DepartureCountry": "Qatar",
+    "ArrivalCountry": "Turkey",
+    "Prices": {
+      "Economy": 200,
+      "Business": 450,
+      "FirstClass": 800
+    },
+    "Id": "482c1767-e2bd-4342-b951-3d789b8dc8b3"
   }
 ]
