@@ -1,6 +1,8 @@
+using AirportTicketBooking.Domain.Entities;
+using AirportTicketBooking.Domain.Interfaces;
+using AirportTicketBooking.Services.Utilities;
+
 namespace AirportTicketBooking.Services;
-using  AirportTicketBooking.Domain.Entities;
-using  AirportTicketBooking.Domain.Interfaces;
 public class AuthService
 {
     private readonly IRepository<Manager> _managerRepository;

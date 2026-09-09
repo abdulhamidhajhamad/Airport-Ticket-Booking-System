@@ -1,14 +1,19 @@
 using AirportTicketBooking.Domain.Entities;
 using AirportTicketBooking.Domain.Enums;
-using AirportTicketBooking.Domain.Interfaces; 
+using AirportTicketBooking.Domain.Interfaces;
+using AirportTicketBooking.Domain.Common;
 using AirportTicketBooking.Services.Utilities;
+using System.Reflection;
 
 namespace AirportTicketBooking.Services;
+
+public record CsvRowError(int LineNumber, string ErrorMessage);
+public record CsvImportResult(int SuccessfulCount, List<CsvRowError> Errors);
 
 public class ManagerService
 {
     private readonly IRepository<Booking> _bookingRepository;
-    private readonly IRepository<Flight> _flightRepository; 
+    private readonly IRepository<Flight> _flightRepository;
     private readonly FlightService _flightService;
 
     public ManagerService(
@@ -42,68 +47,131 @@ public class ManagerService
         var matchingFlightIds = matchingFlights.Select(f => f.Id).ToHashSet();
         var bookings = _bookingRepository.GetAll().Where(b => matchingFlightIds.Contains(b.FlightId));
 
-        if (flightClass.HasValue)
-        {
-            bookings = bookings.Where(b => b.FlightClass == flightClass.Value);
-        }
-        if (flightId.HasValue)
-        {
-            bookings = bookings.Where(b => b.FlightId == flightId.Value);
-        }
-        if (maxPrice.HasValue)
-        {
-            bookings = bookings.Where(b => b.Price <= maxPrice.Value);
-        }
+        if (flightClass.HasValue) bookings = bookings.Where(b => b.FlightClass == flightClass.Value);
+        if (flightId.HasValue) bookings = bookings.Where(b => b.FlightId == flightId.Value);
+        if (maxPrice.HasValue) bookings = bookings.Where(b => b.Price <= maxPrice.Value);
+        
         if (!string.IsNullOrEmpty(passengerPassportNumber))
         {
-            bookings = bookings.Where(b => b.PassportNumber.Equals(passengerPassportNumber, StringComparison.OrdinalIgnoreCase));
+            bookings = bookings.Where(b => b.PassengerPassportNumber.Equals(passengerPassportNumber, StringComparison.OrdinalIgnoreCase));
         }
 
         return bookings;
     }
 
-    public void ImportFlightsFromCsv(string filePath)
+    public CsvImportResult ImportFlightsFromCsv(string filePath)
     {
         if (!File.Exists(filePath))
         {
             throw new FileNotFoundException($"The file {filePath} does not exist.");
         }
 
-        var lines = File.ReadLines(filePath);
-        
-        foreach (var line in lines.Skip(1)) 
+        var errors = new List<CsvRowError>();
+        int successfulCount = 0;
+        int lineNumber = 0;
+
+        foreach (var line in File.ReadLines(filePath))
         {
-            if (string.IsNullOrWhiteSpace(line)) continue;
+            lineNumber++;
+
+            if (lineNumber == 1) continue;
+
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                errors.Add(new CsvRowError(lineNumber, "السطر فارغ ولا يحتوي على بيانات."));
+                continue;
+            }
 
             var columns = line.Split(',');
 
-            if (columns.Length < 10) continue;
+            if (columns.Length < 10)
+            {
+                errors.Add(new CsvRowError(lineNumber, $"عدد الأعمدة غير مكتمل. متوقع 10 أعمدة ولكن وجد {columns.Length}."));
+                continue;
+            }
 
             try
             {
                 Flight flight = CsvReflectionParser.ParseRow(columns);
+                var rowValidationErrors = new List<string>();
 
-                if (flight.DepartureDateTime >= flight.ArrivalDateTime) continue;
-                
-                if (flight.Prices.Values.Any(p => p < 0)) continue;
-
-                if (string.IsNullOrWhiteSpace(flight.FlightNumber) || 
-                    string.IsNullOrWhiteSpace(flight.DepartureAirport) || 
-                    string.IsNullOrWhiteSpace(flight.ArrivalAirport))
+                if (flight.DepartureDateTime >= flight.ArrivalDateTime)
                 {
+                    rowValidationErrors.Add("تاريخ المغادرة لا يمكن أن يكون بعد أو مساوياً لتاريخ الوصول.");
+                }
+                if (flight.DepartureDateTime < DateTime.Now)
+                {
+                    rowValidationErrors.Add("تاريخ المغادرة قديم! يجب أن يكون تاريخ الرحلة في المستقبل.");
+                }
+
+                if (flight.Prices.Values.Any(p => p < 0))
+                {
+                    rowValidationErrors.Add("سعر الرحلة لا يمكن أن يكون قيمة سالبة.");
+                }
+
+                if (string.IsNullOrWhiteSpace(flight.FlightNumber)) rowValidationErrors.Add("رقم الرحلة حقل مطلوب.");
+                if (string.IsNullOrWhiteSpace(flight.DepartureAirport)) rowValidationErrors.Add("مطار المغادرة حقل مطلوب.");
+                if (string.IsNullOrWhiteSpace(flight.ArrivalAirport)) rowValidationErrors.Add("مطار الوصول حقل مطلوب.");
+
+                if (rowValidationErrors.Any())
+                {
+                    string combinedErrors = string.Join(" | ", rowValidationErrors);
+                    errors.Add(new CsvRowError(lineNumber, combinedErrors));
                     continue;
                 }
 
                 flight.Id = Guid.NewGuid();
-
                 _flightRepository.Add(flight);
+                successfulCount++;
             }
-            catch
+            catch (Exception ex)
             {
-                continue; 
+                errors.Add(new CsvRowError(lineNumber, $"خطأ في صياغة البيانات ونوعها: {ex.Message}"));
             }
         }
 
-        _flightRepository.Save();
+        if (successfulCount > 0)
+        {
+            _flightRepository.Save();
+        }
+
+        return new CsvImportResult(successfulCount, errors);
+    }
+
+    public void DisplayFlightValidationConstraints()
+    {
+        var flightType = typeof(Flight);
+        var properties = flightType.GetProperties();
+
+        Console.WriteLine("\n=== Dynamic Model Validation Details ===");
+
+        foreach (var prop in properties)
+        {
+            var hasColumn = prop.GetCustomAttribute<CsvColumnAttribute>() != null;
+            var hasPrice = prop.GetCustomAttributes<CsvPriceMappingAttribute>().Any();
+
+            if (!hasColumn && !hasPrice) continue;
+
+            Console.WriteLine($"\n* {prop.Name} *");
+
+            if (prop.PropertyType == typeof(string)) Console.WriteLine("   Type: Free Text");
+            else if (prop.PropertyType == typeof(DateTime)) Console.WriteLine("   Type: Date Time");
+            else if (prop.PropertyType == typeof(int)) Console.WriteLine("   Type: Integer");
+            else if (hasPrice) Console.WriteLine("   Type: Dictionary (FlightClass -> Decimal)");
+
+            var constraints = new List<string> { "Required" };
+
+            if (prop.PropertyType == typeof(DateTime) || prop.GetCustomAttribute<FutureDateAttribute>() != null)
+            {
+                constraints.Add("Allowed Range (Today -> Future)");
+            }
+            if (prop.PropertyType == typeof(int) || hasPrice)
+            {
+                constraints.Add("Must be non-negative (>= 0)");
+            }
+
+            Console.WriteLine($"   Constraint: {string.Join(", ", constraints)}");
+        }
+        Console.WriteLine("\n=========================================");
     }
 }

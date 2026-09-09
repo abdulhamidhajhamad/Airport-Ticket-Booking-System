@@ -1,0 +1,4 @@
+FlightNumber,DepartureAirport,ArrivalAirport,DepartureCountry,ArrivalCountry,DepartureDateTime,ArrivalDateTime,PriceEconomy,PriceBusiness,PriceFirstClass
+QA120,DOH,IST,Qatar,Turkey,2026-09-01T08:00:00,2026-09-01T12:00:00,200,450,800
+MS777,CAI,DXB,Egypt,UAE,2023-01-01T05:00:00,2023-01-01T09:00:00,120,300,500
+TK999,IST,JFK,Turkey,USA,2026-10-10T12:00:00,2026-10-10T15:00:00,-50,200,400

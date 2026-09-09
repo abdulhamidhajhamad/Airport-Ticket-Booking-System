@@ -1,4 +1,7 @@
-namespace AirportTicketBooking.passengerServices;
+using AirportTicketBooking.Domain.Entities;
+using AirportTicketBooking.Domain.Enums;
+
+namespace AirportTicketBooking.Services;
 
 public class PassengerService
 {
@@ -10,7 +13,7 @@ public class PassengerService
         _bookingService = bookingService;
         _flightService = flightService;
     }
-    public IEnumerable<Booking> GetMyBookings(string passengerPassportNumber) => _bookingService.GetAllBookings().Where(p => p.PassportNumber == passengerPassportNumber);
+    public IEnumerable<Booking> GetMyBookings(string passengerPassportNumber) => _bookingService.GetAllBookings().Where(p => p.PassengerPassportNumber == passengerPassportNumber);
     public bool CancelMyBooking(Guid bookingId)
     {
         return _bookingService.CancelBooking(bookingId);

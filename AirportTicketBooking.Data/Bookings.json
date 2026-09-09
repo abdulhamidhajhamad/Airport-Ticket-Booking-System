@@ -1,0 +1,11 @@
+[
+  {
+    "Id": "55555555-4444-3333-2222-111111111111",
+    "FlightId": "99999999-8888-7777-6666-555555555555",
+    "PassengerName": "Ahmad Ali",
+    "PassengerPassportNumber": "A98765432",
+    "FlightClass": "Economy",
+    "Price": 150.0,
+    "Status": "Confirmed"
+  }
+]

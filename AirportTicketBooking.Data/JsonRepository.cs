@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using AirportTicketBooking.Domain.Common;
 using AirportTicketBooking.Domain.Interfaces;
 
@@ -6,6 +7,12 @@ namespace AirportTicketBooking.Data;
 
 public class JsonRepository<T> : IRepository<T> where T : EntityBase
 {
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     private readonly string _filePath;
     private bool _isDirty;
     private readonly List<T> _cache;
@@ -31,7 +38,7 @@ public class JsonRepository<T> : IRepository<T> where T : EntityBase
             return new List<T>();
         }
 
-        return JsonSerializer.Deserialize<List<T>>(json) ?? new List<T>();
+        return JsonSerializer.Deserialize<List<T>>(json, _jsonOptions) ?? new List<T>();
     }
 
     public IEnumerable<T> GetAll() => _cache;
@@ -65,7 +72,7 @@ public class JsonRepository<T> : IRepository<T> where T : EntityBase
     {
         if (!_isDirty) return;
 
-        var json = JsonSerializer.Serialize(_cache, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(_cache, _jsonOptions);
         File.WriteAllText(_filePath, json);
         _isDirty = false;
     }
